@@ -27,56 +27,72 @@ ui <- fluidPage(
                       ),
              tabPanel("Manuscript",
                       fluidRow(
-                        sidebarLayout(
-                          sidebarPanel(
-                            h3("Manuscript"), 
-                            uiOutput("manuUI"),
-                            
-                            conditionalPanel(
-                              condition = "input.paper == 'Other'",
-                              textInput("np", "Enter New Manuscript Name:", NULL),
-                              actionButton("Addmanu", "Add Manuscript")),
-                            hr(),
-                            h4("Enter Weights for Content Area"),
-                            dropdownButton(
-                              helpText("Weights are percentage (%) contribution for each manuscript project."),
-                              numericInput("Development", "Development", value = 0, min = 0, max = 100),
-                              numericInput("Analysis", "Analysis", value = 0, min = 0, max = 100),
-                              numericInput("Manuscript", "Manuscript", value = 0, min = 0, max = 100),
-                              numericInput("msprocess", "Managing Submission Process", value = 0, min = 0, max = 100),
-                              numericInput("splash", "Splashpages", value = 0, min = 0, max = 100),
-                              numericInput("dui", "Data UI", value = 0, min = 0, max = 100),
-                              numericInput("ttr", "Team Time Report", value = 0, min = 0, max = 100),
-                              numericInput("quant", "Quant workflow", value = 0, min = 0, max = 100),
-                              numericInput("hq", "HQ & Facilitator", value = 0, min = 0, max = 100),
-                              numericInput("model", "Models", value = 0, min = 0, max = 100),
-                              numericInput("sui", "Sim UI", value = 0, min = 0, max = 100),
-                              numericInput("ees", "Accreditation and EES", value = 0, min = 0, max = 100),
-                              numericInput("qual", "Qualitative Workgroup", value = 0, min = 0, max = 100),
-                              status = "info", icon = icon("gear")
-                            ),
-                            h4("Contributor"), 
-                            checkboxGroupInput("auth", "Select contributors:", 
-                                               people$fname, 
-                                               selected = NULL)
-                            
-                          ),
-                          mainPanel(
-                            tabsetPanel(
-                              tabPanel("weightsection",
-                                       tableOutput("weight")),
-                              tabPanel("People",
-                                       tableOutput("authors"))
-                            )
-                          )
-                        ))),
+                        column(width = 4,
+                               h4("Manuscript"), 
+                               uiOutput("manuUI"),
+                               hr(),
+                               conditionalPanel(
+                                 condition = "input.paper == 'Other'",
+                                 textInput("np", "Enter New Manuscript Name:", NULL),
+                                 actionButton("Addmanu", "Add Manuscript")
+                               )
+                               
+                        ),
+                        column(width = 4,
+                               h4("Enter Weights for Content Area"),
+                               dropdownButton(
+                                 helpText("Weights are percentage (%) contribution for each manuscript project."),
+                                 numericInput("Development", "Development", value = 0, min = 0, max = 100),
+                                 numericInput("Analysis", "Analysis", value = 0, min = 0, max = 100),
+                                 numericInput("Manuscript", "Manuscript", value = 0, min = 0, max = 100),
+                                 numericInput("msprocess", "Managing Submission Process", value = 0, min = 0, max = 100),
+                                 numericInput("splash", "Splashpages", value = 0, min = 0, max = 100),
+                                 numericInput("dui", "Data UI", value = 0, min = 0, max = 100),
+                                 numericInput("ttr", "Team Time Report", value = 0, min = 0, max = 100),
+                                 numericInput("quant", "Quant workflow", value = 0, min = 0, max = 100),
+                                 numericInput("hq", "HQ & Facilitator", value = 0, min = 0, max = 100),
+                                 numericInput("model", "Models", value = 0, min = 0, max = 100),
+                                 numericInput("sui", "Sim UI", value = 0, min = 0, max = 100),
+                                 numericInput("ees", "Accreditation and EES", value = 0, min = 0, max = 100),
+                                 numericInput("qual", "Qualitative Workgroup", value = 0, min = 0, max = 100),
+                                 circle = FALSE,
+                                 icon = icon("weight-hanging")
+                               )
+                        ),
+                        
+                        column(width = 4, 
+                               h4("Contributor"), 
+                               pickerInput(
+                                 inputId = "auth", 
+                                 label = "Select potential manuscript project contributors:", 
+                                 choices = people$fname, 
+                                 options = list(
+                                   `actions-box` = TRUE, 
+                                   size = 10,
+                                   `selected-text-format` = "count > 2"), 
+                                 multiple = TRUE
+                               )
+                        )),
+                      
+                      hr(),
+                      fluidRow(
+                        column(8,
+                               h4("Identified Project Content Areas:"),
+                               tableOutput("wgt") #dataTableOutput("ctwgt")
+                               ),
+                        column(4,
+                               h4("Identified Project Potential Contributors:"),
+                               tableOutput("authlist")
+                               )
+                      )
+                      
+                        ),
              tabPanel("Score",
-                      mainPanel(
-                        sidebarLayout(
-                          sidebarPanel(actionButton("runButton","Add Score Value")),
+                      sidebarLayout(
+                        sidebarPanel(actionButton("runButton","Add Score Value")),
                           mainPanel(#dataTableOutput("tbscore")
                             rHandsontableOutput("tbscore"))
-                      ))
+                      )
                       ),
              tabPanel("Rank",
                       dataTableOutput("rank")),
@@ -95,6 +111,8 @@ server <- function(input, output, session) {
     selectInput("paper", "Select a Manuscript:", papers, 1)
   })
   
+  output$authlist <- renderPrint(input$auth)
+  
   # BUild the dataset
   df1 <- reactive({
     #Scoring table
@@ -104,18 +122,26 @@ server <- function(input, output, session) {
     usr_sect_wgt <- c(input$Development, input$Analysis, input$Manuscript, input$msprocess,
                       input$dui, input$ttr, input$quant, input$hq, input$model, input$sui,
                       input$ees, input$qual)
-    dat1 <- data.frame(Section, usr_sect_wgt, stringsAsFactors = FALSE) 
+    dat1 <- data.frame(Section, usr_sect_wgt, stringsAsFactors = FALSE) %>%
+      add_row(Section = "Total", usr_sect_wgt = sum(usr_sect_wgt)) %>%
+      rename(`Content Weight` = usr_sect_wgt)
       
     
     return(dat1)
   })
   
+  output$wgt <- renderTable({
+    df1()
+  })
+  
   df2 <- reactive({
+    dat1 <- df1() %>%
+      filter(Section != "Total") %>%
+      filter(`Content Weight`!= 0)
     #Authorlist
-    dat2 <- df1() %>%
+    dat2 <-  dat1 %>%
       inner_join(df[,1:4], by = "Section") %>%
-      filter(usr_sect_wgt != 0)%>%
-      cbind.data.frame(data.frame(matrix(vector(), nrow(df1()), length(input$auth),
+      cbind.data.frame(data.frame(matrix(vector(), nrow(dat1), length(input$auth),
                                          dimnames = list(c(), input$auth)),
                                   stringsAsFactors = FALSE)) %>%
       mutate_at(5:(length(input$auth) + 5), as.numeric)
@@ -126,7 +152,7 @@ server <- function(input, output, session) {
   
   values <- reactiveValues()
   output$tbscore <- renderRHandsontable({
-    rhandsontable(data = df2() %>% select(-usr_sect_wgt),
+    rhandsontable(data = df2() %>% select(-`Content Weight`),
                   rowHeaders = NULL,
                   contextMenu = FALSE,
                   width = 600,
