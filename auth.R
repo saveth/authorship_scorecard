@@ -78,7 +78,7 @@ ui <- fluidPage(
                       fluidRow(
                         column(8,
                                h4("Identified Project Content Areas:"),
-                               tableOutput("wgt") #dataTableOutput("ctwgt")
+                               tableOutput("wgt")
                                ),
                         column(4,
                                h4("Identified Project Potential Contributors:"),
@@ -123,6 +123,7 @@ server <- function(input, output, session) {
                       input$dui, input$ttr, input$quant, input$hq, input$model, input$sui,
                       input$ees, input$qual)
     dat1 <- data.frame(Section, usr_sect_wgt, stringsAsFactors = FALSE) %>%
+      arrange(desc(usr_sect_wgt)) %>%
       add_row(Section = "Total", usr_sect_wgt = sum(usr_sect_wgt)) %>%
       rename(`Content Weight` = usr_sect_wgt)
       
