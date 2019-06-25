@@ -6,7 +6,7 @@
 ##################################################
 
 library(tidyverse)
-library(readxl)
+library(writexl)
 library(stringr)
 library(shiny)
 library(shinyWidgets)
@@ -21,6 +21,7 @@ ui <- fluidPage(
                       fluidRow(width = 12, offset = 1,
                                "Created by: Savet Hong for TeamPSD"),
                       hr(),
+                      h4("Please enter your name:"),
                       textInput("usr_in", ""),
                       actionButton("submit1", "Done"),
                       textOutput("usr_out")
@@ -76,7 +77,8 @@ ui <- fluidPage(
                       
                       hr(),
                       fluidRow(
-                        column(8,
+                        column(2),
+                        column(6,
                                h4("Identified Project Content Areas:"),
                                tableOutput("wgt")
                                ),
@@ -96,7 +98,9 @@ ui <- fluidPage(
                       ),
              tabPanel("Rank",
                       dataTableOutput("rank")),
-             tabPanel("Save")
+             tabPanel("Save",
+                      downloadButton("dl", "Download")
+                      )
              )
   
 )
@@ -104,14 +108,18 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   output$usr_out <- eventReactive(input$submit1,{
-    print(paste0( "Thank you ",input$usr_in, ". Please go to the next page,"))
+    print(paste0( "Thank you ",input$usr_in, ". Please go to the next page."))
   })
   output$manuUI <- renderUI({
     papers <- c(names(manu_list), "Other") 
     selectInput("paper", "Select a Manuscript:", papers, 1)
   })
   
-  output$authlist <- renderPrint(input$auth)
+  authdf <- reactive(input)
+  
+  output$authlist <- renderTable({
+    input$auth 
+    }, colnames = FALSE)
   
   # BUild the dataset
   df1 <- reactive({
@@ -179,6 +187,12 @@ server <- function(input, output, session) {
   })
   
   #Create Excel output file
+  output$dl <- downloadHandler(
+    filename = function(){paste0(input$usr_in, '_', input$paper, '.xlsx')},
+    content = function(file){
+      write_xlsx(list(Score = values$data, Rank = df3()), path = file)
+    }
+  )
 
 
 }
