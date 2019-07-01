@@ -1,6 +1,6 @@
 ## title: "Authorship Scorecard"
 ## author: "Savet Hong"
-## date: "May 28, 2019"
+## date: "July 1, 2019"
 ## Purpose: Build Interactive Scorecard
 ##
 ##################################################
@@ -62,6 +62,7 @@ ui <- fluidPage(
                                  numericInput("lit", "Literature Search", value = 0, min = 0, max = 100),
                                  numericInput("irb", "Institutional Review Board", value = 0, min = 0, max = 100),
                                  numericInput("dcp", "Data Collection and Preparation (DCP)", value = 0, min = 0, max = 100),
+                                 numericInput("oad", "Other administrative duties", value = 0, min = 0, max = 100),
                                  circle = FALSE,
                                  icon = icon("weight-hanging")
                                )
@@ -106,12 +107,16 @@ ui <- fluidPage(
                       )
                       ),
              tabPanel("Rank",
-                      h6("This page shows the ranking based on the scores entered in the 'Score' tab and the weight from the Contribution Category."),
-                      dataTableOutput("rank"),
-                      h4("Please go to the 'Save' tab.")
+                      h6("This page shows the ranking based on the scores entered in 
+                      the 'Score' tab and the weight from the Contribution Category. 
+                      If you need to make changes, please go back to the 'Score' tab 
+                         to make your edits, otherwise go to the 'Save' tab."),
+                      br(),
+                      dataTableOutput("rank")
                       ),
              tabPanel("Save",
-                      h4("Clicking on the 'Download' button below, will download an excel file of the tables from the 'Score' and 'Rank' tabs."),
+                      h5("Clicking on the 'Download' button below, will download an 
+                         excel file of the tables from the 'Score' and 'Rank' tabs."),
                       #downloadButton("dl", "Download")
                       div(style="display:inline-block", downloadButton("dl", "Download"), style="float:right")
                       )
@@ -145,19 +150,21 @@ server <- function(input, output, session) {
   # BUild the dataset
   df1 <- reactive({
     #Scoring table
-    # Section <- c("Development", "Analysis", "Manuscript", "Managing Submission Process",
-    #              "Splashpages", "Team Time Report", "Quant workflow", "HQ & Facilitator",
-    #              "Models", "Sim UI", "Accreditation and EES", "Qualitative Workgroup")
-    
-    usr_sect_wgt <- c(input$Development, input$Analysis, input$Manuscript, input$msprocess,
-                      input$dui, input$ttr, input$quant, input$hq, input$model, input$sui,
-                      input$ees, input$qual)
+    Section <- c('Accreditation and EES', 'Data UI & Splashpage', 'HQ & Facilitator', 
+                 'Models', 'Qualitative Workgroup', 'Research tasks', 'Sim UI', 'Team Time Report', 
+                 'Development', 'Analysis', 'Manuscript', 'Managing Submission Process', 
+                 'Literature search', 'Institutional Review Board', 
+                 'Data Collection and Preparation (DCP)', 'Other administrative duties')
+    usr_sect_wgt <- c(input$ees, input$dui, input$hq, input$model, input$qual,
+                      input$research, input$sui, input$ttr, 
+                      input$dev, input$Analysis, input$Manuscript, input$msprocess, 
+                      input$lit, input$irb, input$dcp, input$oad)
+
     dat1 <- data.frame(Section, usr_sect_wgt, stringsAsFactors = FALSE) %>%
       arrange(desc(usr_sect_wgt)) %>%
       add_row(Section = "Total", usr_sect_wgt = sum(usr_sect_wgt)) %>%
       rename(`Content Weight` = usr_sect_wgt)
-      
-    
+
     return(dat1)
   })
   
@@ -168,14 +175,17 @@ server <- function(input, output, session) {
   df2 <- reactive({
     dat1 <- df1() %>%
       filter(Section != "Total") %>%
-      filter(`Content Weight`!= 0)
+      rename(Category = Section) 
     #Authorlist
     dat2 <-  dat1 %>%
-      inner_join(df[,1:4], by = "Section") %>%
       cbind.data.frame(data.frame(matrix(vector(), nrow(dat1), length(input$auth),
                                          dimnames = list(c(), input$auth)),
                                   stringsAsFactors = FALSE)) %>%
-      mutate_at(5:(length(input$auth) + 5), as.numeric)
+      mutate_at(3:(length(input$auth)+2), as.numeric) %>%
+      inner_join(df[,1:4], by = "Category") %>%
+      select(names(df)[1:4], everything()) %>%
+      filter(`Content Weight` != 0)
+      
     
     return(dat2)
   })
@@ -186,8 +196,8 @@ server <- function(input, output, session) {
     rhandsontable(data = df2() %>% select(-`Content Weight`),
                   rowHeaders = NULL,
                   contextMenu = FALSE,
-                  width = 600,
-                  height = 300)
+                  #width = 600,
+                  height = 700)
   })
   
   observeEvent(input$runButton,{
@@ -195,8 +205,8 @@ server <- function(input, output, session) {
   })
   df3 <- reactive({
     values$data %>%
-      select(-Points) %>%
-      gather(Author, score, -Section, -Eligible, -Subsection) %>%
+      select(-`Points Possible`) %>%
+      gather(Author, score,  -Eligibility, -Category, -Subcategory) %>%
       mutate(Author = sub("\\.\\.", ", ", Author),
              Author = sub("\\.", " ", Author)) %>%
       group_by(Author) %>%
