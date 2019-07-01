@@ -29,7 +29,7 @@ ui <- fluidPage(
              tabPanel("Manuscript",
                       fluidRow(
                         column(width = 4,
-                               h4("Manuscript"), 
+                               h4("1. Select a Manuscript"), 
                                uiOutput("manuUI"),
                                hr(),
                                conditionalPanel(
@@ -40,9 +40,9 @@ ui <- fluidPage(
                                
                         ),
                         column(width = 4,
-                               h4("Enter Weights for Content Area"),
+                               h4("2. Enter Weights for Each Contribution Category"),
                                dropdownButton(
-                                 helpText("Weights are percentage (%) contribution for each manuscript project."),
+                                 helpText("Weights are percentage (%) and must total to 100%."),
                                  numericInput("Development", "Development", value = 0, min = 0, max = 100),
                                  numericInput("Analysis", "Analysis", value = 0, min = 0, max = 100),
                                  numericInput("Manuscript", "Manuscript", value = 0, min = 0, max = 100),
@@ -62,17 +62,18 @@ ui <- fluidPage(
                         ),
                         
                         column(width = 4, 
-                               h4("Contributor"), 
+                               h4("3. Select Contributor"), 
                                pickerInput(
                                  inputId = "auth", 
-                                 label = "Select potential manuscript project contributors:", 
+                                 #label = "Select potential manuscript project contributors:", 
                                  choices = people$fname, 
                                  options = list(
                                    `actions-box` = TRUE, 
                                    size = 10,
                                    `selected-text-format` = "count > 2"), 
                                  multiple = TRUE
-                               )
+                               ),
+                               h4("4. Go to the Score tab")
                         )),
                       
                       hr(),
@@ -91,15 +92,22 @@ ui <- fluidPage(
                         ),
              tabPanel("Score",
                       sidebarLayout(
-                        sidebarPanel(actionButton("runButton","Add Score Value")),
+                        sidebarPanel(actionButton("runButton","Add Score Value"),
+                                     br(),
+                                     textOutput("score_msg")),
                           mainPanel(#dataTableOutput("tbscore")
                             rHandsontableOutput("tbscore"))
                       )
                       ),
              tabPanel("Rank",
-                      dataTableOutput("rank")),
+                      h6("This page shows the ranking based on the scores entered in the 'Score' tab and the weight from the Contribution Category."),
+                      dataTableOutput("rank"),
+                      h4("Please go to the 'Save' tab.")
+                      ),
              tabPanel("Save",
-                      downloadButton("dl", "Download")
+                      h4("Clicking on the 'Download' button below, will download an excel file of the tables from the 'Score' and 'Rank' tabs."),
+                      #downloadButton("dl", "Download")
+                      div(style="display:inline-block", downloadButton("dl", "Download"), style="float:right")
                       )
              )
   
@@ -107,12 +115,19 @@ ui <- fluidPage(
 
 
 server <- function(input, output, session) {
+  #Messages
   output$usr_out <- eventReactive(input$submit1,{
-    print(paste0( "Thank you ",input$usr_in, ". Please go to the next page."))
+    print(paste0( "Thank you ",input$usr_in, ". Please go to the Manuscript tab."))
   })
+  
+  output$score_msg <- eventReactive(input$runButton, {
+    print("\nIf you are satisfied please go to the Rank tab. \nOtherwise, make changes and click on the 'Add Score Value' again. ")
+  })
+    
   output$manuUI <- renderUI({
     papers <- c(names(manu_list), "Other") 
-    selectInput("paper", "Select a Manuscript:", papers, 1)
+    selectInput("paper", "", papers, 1)
+    #Select a Manuscript:
   })
   
   authdf <- reactive(input)
