@@ -55,9 +55,6 @@ mn_missing <- pcheck %>%
   filter(is.na(Paper)) %>%
   select(Group, fname)
 
-    ##  remove individuals from the tm_missing from the master list
-    ## of potential co-authors
-
 #Create list of df of manuscript/authors/sections
 mfin <- anti_join(manu_clean, tm_missing)
 sect <- unique(topic$Category)
@@ -81,8 +78,11 @@ df <- topic %>%
   mutate_at(4:(nrow(people)+4), as.numeric)
   
 names(df) <- c(names(topic),people$fname)
+
+Category <- unique(df[,1:2])
+rownames(Category) <- 1:nrow(Category)
 ##################
 ## Save/Export the Data
 ##################
 
-save(people, manu_list, df, file = "auth.Rdata")
+save(people, manu_list, df, Category, file = "auth.Rdata")
