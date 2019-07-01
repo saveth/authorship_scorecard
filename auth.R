@@ -40,8 +40,8 @@ ui <- fluidPage(
                                
                         ),
                         column(width = 4,
-                               h4("2. Enter Weight for Overall Eligible Section Relative to Responsible"),
-                               numericInput("elig", "Overall Eligible Weight", value = 0, min = 0, max = 100),
+                               #h4("2. Enter Weight for Overall Eligible Section Relative to Responsible"),
+                               #numericInput("elig", "Overall Eligible Weight", value = 0, min = 0, max = 100),
                                h4("2. Enter Weights for Each Eligible Contribution Category"),
                                dropdownButton(
                                  helpText("Weights are percentage (%) and must total to 100%."),
@@ -116,7 +116,7 @@ ui <- fluidPage(
                       ),
              tabPanel("Save",
                       h5("Clicking on the 'Download' button below, will download an 
-                         excel file of the tables from the 'Score' and 'Rank' tabs."),
+                         excel file of the tables from the 'Category Weight', 'Score' and 'Rank'."),
                       #downloadButton("dl", "Download")
                       div(style="display:inline-block", downloadButton("dl", "Download"), style="float:right")
                       )
@@ -204,11 +204,17 @@ server <- function(input, output, session) {
     values$data <- hot_to_r(input$tbscore) 
   })
   df3 <- reactive({
+    dat1 <- df1() %>%
+      filter(Section != "Total") %>%
+      rename(Category = Section) 
+    
     values$data %>%
       select(-`Points Possible`) %>%
       gather(Author, score,  -Eligibility, -Category, -Subcategory) %>%
+      left_join(dat1) %>%
       mutate(Author = sub("\\.\\.", ", ", Author),
-             Author = sub("\\.", " ", Author)) %>%
+             Author = sub("\\.", " ", Author),
+             score = score * (`Content Weight`)/100) %>%
       group_by(Author) %>%
       summarise(`Total Score` = sum(score, na.rm = TRUE)) %>% 
       arrange(desc(`Total Score`))
@@ -222,7 +228,7 @@ server <- function(input, output, session) {
   output$dl <- downloadHandler(
     filename = function(){paste0(input$usr_in, '_', input$paper, '.xlsx')},
     content = function(file){
-      write_xlsx(list(Score = values$data, Rank = df3()), path = file)
+      write_xlsx(list(`Category Weight` = df1(), Score = values$data, Rank = df3()), path = file)
     }
   )
 
