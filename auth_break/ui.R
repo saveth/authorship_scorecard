@@ -117,7 +117,7 @@ shinyUI(fluidPage(
                ),
                tabPanel("Save",
                         h5("Clicking on the 'Download' button below, will download an 
-                         excel file of the tables from the 'Score' and 'Rank' tabs."),
+                         excel file of the tables from the 'Manuscript', 'Score' and 'Rank' tabs."),
                         #downloadButton("dl", "Download")
                         div(style="display:inline-block", downloadButton("dl", "Download"), style="float:right")
                )

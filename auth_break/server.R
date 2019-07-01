@@ -96,11 +96,17 @@ shinyServer(function(input, output) {
         values$data <- hot_to_r(input$tbscore) 
     })
     df3 <- reactive({
+        dat1 <- df1() %>%
+            filter(Section != "Total") %>%
+            rename(Category = Section) 
+        
         values$data %>%
             select(-`Points Possible`) %>%
             gather(Author, score,  -Eligibility, -Category, -Subcategory) %>%
+            left_join(dat1) %>%
             mutate(Author = sub("\\.\\.", ", ", Author),
-                   Author = sub("\\.", " ", Author)) %>%
+                   Author = sub("\\.", " ", Author),
+                   score = score * (`Content Weight`)/100) %>%
             group_by(Author) %>%
             summarise(`Total Score` = sum(score, na.rm = TRUE)) %>% 
             arrange(desc(`Total Score`))
@@ -114,7 +120,7 @@ shinyServer(function(input, output) {
     output$dl <- downloadHandler(
         filename = function(){paste0(input$usr_in, '_', input$paper, '.xlsx')},
         content = function(file){
-            write_xlsx(list(Score = values$data, Rank = df3()), path = file)
+            write_xlsx(list(`Category Weight` = df1(), Score = values$data, Rank = df3()), path = file)
         }
     )
 
