@@ -40,22 +40,28 @@ ui <- fluidPage(
                                
                         ),
                         column(width = 4,
-                               h4("2. Enter Weights for Each Contribution Category"),
+                               h4("2. Enter Weight for Overall Eligible Section Relative to Responsible"),
+                               numericInput("elig", "Overall Eligible Weight", value = 0, min = 0, max = 100),
+                               h4("2. Enter Weights for Each Eligible Contribution Category"),
                                dropdownButton(
                                  helpText("Weights are percentage (%) and must total to 100%."),
-                                 numericInput("Development", "Development", value = 0, min = 0, max = 100),
+                                 
+                                 numericInput("ees", "Accreditation and EES", value = 0, min = 0, max = 100),
+                                 numericInput("dui", "Data UI", value = 0, min = 0, max = 100),
+                                 numericInput("hq", "HQ & Facilitator", value = 0, min = 0, max = 100),
+                                 numericInput("model", "Models", value = 0, min = 0, max = 100),
+                                 numericInput("qual", "Qualitative Workgroup", value = 0, min = 0, max = 100),
+                                 numericInput("research", "Research Tasks", value = 0, min = 0, max = 100),
+                                 numericInput("sui", "Sim UI", value = 0, min = 0, max = 100),
+                                 numericInput("ttr", "Team Time Report", value = 0, min = 0, max = 100),
+                                 
+                                 numericInput("dev", "Development", value = 0, min = 0, max = 100),
                                  numericInput("Analysis", "Analysis", value = 0, min = 0, max = 100),
                                  numericInput("Manuscript", "Manuscript", value = 0, min = 0, max = 100),
                                  numericInput("msprocess", "Managing Submission Process", value = 0, min = 0, max = 100),
-                                 numericInput("splash", "Splashpages", value = 0, min = 0, max = 100),
-                                 numericInput("dui", "Data UI", value = 0, min = 0, max = 100),
-                                 numericInput("ttr", "Team Time Report", value = 0, min = 0, max = 100),
-                                 numericInput("quant", "Quant workflow", value = 0, min = 0, max = 100),
-                                 numericInput("hq", "HQ & Facilitator", value = 0, min = 0, max = 100),
-                                 numericInput("model", "Models", value = 0, min = 0, max = 100),
-                                 numericInput("sui", "Sim UI", value = 0, min = 0, max = 100),
-                                 numericInput("ees", "Accreditation and EES", value = 0, min = 0, max = 100),
-                                 numericInput("qual", "Qualitative Workgroup", value = 0, min = 0, max = 100),
+                                 numericInput("lit", "Literature Search", value = 0, min = 0, max = 100),
+                                 numericInput("irb", "Institutional Review Board", value = 0, min = 0, max = 100),
+                                 numericInput("dcp", "Data Collection and Preparation (DCP)", value = 0, min = 0, max = 100),
                                  circle = FALSE,
                                  icon = icon("weight-hanging")
                                )
@@ -130,7 +136,7 @@ server <- function(input, output, session) {
     #Select a Manuscript:
   })
   
-  authdf <- reactive(input)
+  #authdf <- reactive(input)
   
   output$authlist <- renderTable({
     input$auth 
@@ -139,9 +145,10 @@ server <- function(input, output, session) {
   # BUild the dataset
   df1 <- reactive({
     #Scoring table
-    Section <- c("Development", "Analysis", "Manuscript", "Managing Submission Process",
-                 "Splashpages", "Team Time Report", "Quant workflow", "HQ & Facilitator",
-                 "Models", "Sim UI", "Accreditation and EES", "Qualitative Workgroup")
+    # Section <- c("Development", "Analysis", "Manuscript", "Managing Submission Process",
+    #              "Splashpages", "Team Time Report", "Quant workflow", "HQ & Facilitator",
+    #              "Models", "Sim UI", "Accreditation and EES", "Qualitative Workgroup")
+    
     usr_sect_wgt <- c(input$Development, input$Analysis, input$Manuscript, input$msprocess,
                       input$dui, input$ttr, input$quant, input$hq, input$model, input$sui,
                       input$ees, input$qual)
