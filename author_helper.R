@@ -1,6 +1,6 @@
 ## title: "Authorship Scorecard"
 ## author: "Savet Hong"
-## date: "May 7, 2019"
+## date: "June 30, 2019"
 ## Purpose: Create a blank df for all TeamPSD memmbers
 ##
 ##################################################
@@ -12,9 +12,9 @@ library(stringr)
 ##################
 ## Load the Data
 ##################
-p <- read_excel("TeamPSD_members.xlsx", sheet = "people")
-topic <- read_excel("TeamPSD_members.xlsx", sheet = "categories")
-manu <- read_excel("TeamPSD_members.xlsx", sheet = "manuscripts")
+p <- read_excel("TeamPSD_authorship_info.xlsx", sheet = "people")
+topic <- read_excel("TeamPSD_authorship_info.xlsx", sheet = "categories", skip = 2)
+manu <- read_excel("TeamPSD_authorship_info.xlsx", sheet = "manuscripts")
 
 ##################
 ## Setup the Data
@@ -60,15 +60,15 @@ mn_missing <- pcheck %>%
 
 #Create list of df of manuscript/authors/sections
 mfin <- anti_join(manu_clean, tm_missing)
-sect <- unique(topic$Section)
+sect <- unique(topic$Category)
 
 mfin_topic <- mfin %>%
   cbind.data.frame(data.frame(matrix(vector(), nrow(mfin), length(sect),
                                      dimnames = list(c(), sect)),
                               stringsAsFactors = FALSE)) %>%
-  gather(Section, value, setdiff(names(.), names(mfin))) %>%
+  gather(Category, value, setdiff(names(.), names(mfin))) %>%
   select(-value) %>%
-  left_join(topic, by = "Section")
+  left_join(topic, by = "Category")
 
 manu_list <- split(mfin_topic, f = mfin_topic$Paper)
 
@@ -84,18 +84,5 @@ names(df) <- c(names(topic),people$fname)
 ##################
 ## Save/Export the Data
 ##################
-
-# library("xlsx")
-# write.xlsx(tm_mising, file = "Missing_members.xlsx", sheetName = "Missing Team Member",
-#            append = FALSE)
-
-# library(openxlsx)
-# wb <- createWorkbook("wb")
-# addWorksheet(wb, "Missing Members")
-# addWorksheet(wb, "Missing Authors")
-# writeDataTable(wb, "Missing Members", tm_missing)
-# writeDataTable(wb, "Missing Authors", mn_missing)
-# saveWorkbook(wb, "Missing Members.xlsx", overwrite = TRUE)
-
 
 save(people, manu_list, df, file = "auth.Rdata")
