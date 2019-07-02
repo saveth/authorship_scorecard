@@ -41,9 +41,9 @@ shinyUI(fluidPage(
                                    
                             ),
                             column(width = 4,
-                                   h4("2. Enter Weight for Overall Eligible Section Relative to Responsible"),
-                                   numericInput("elig", "Overall Eligible Weight", value = 0, min = 0, max = 100),
-                                   h4("2. Enter Weights for Each Eligible Contribution Category"),
+                                   h4("2. Select Overall Eligible Weight Relative to Responsible"),
+                                   sliderInput("elig", "Overall Eligible Weight", value = 50, min = 0, max = 100),
+                                   h4("3. Enter Weights for Each Eligible Contribution Category"),
                                    dropdownButton(
                                        helpText("Weights are percentage (%) and must total to 100%."),
                                        
@@ -56,21 +56,21 @@ shinyUI(fluidPage(
                                        numericInput("sui", "Sim UI", value = 0, min = 0, max = 100),
                                        numericInput("ttr", "Team Time Report", value = 0, min = 0, max = 100),
                                        
-                                       numericInput("dev", "Development", value = 0, min = 0, max = 100),
-                                       numericInput("Analysis", "Analysis", value = 0, min = 0, max = 100),
-                                       numericInput("Manuscript", "Manuscript", value = 0, min = 0, max = 100),
-                                       numericInput("msprocess", "Managing Submission Process", value = 0, min = 0, max = 100),
-                                       numericInput("lit", "Literature Search", value = 0, min = 0, max = 100),
-                                       numericInput("irb", "Institutional Review Board", value = 0, min = 0, max = 100),
-                                       numericInput("dcp", "Data Collection and Preparation (DCP)", value = 0, min = 0, max = 100),
-                                       numericInput("oad", "Other administrative duties", value = 0, min = 0, max = 100),
+                                       # numericInput("dev", "Development", value = 0, min = 0, max = 100),
+                                       # numericInput("Analysis", "Analysis", value = 0, min = 0, max = 100),
+                                       # numericInput("Manuscript", "Manuscript", value = 0, min = 0, max = 100),
+                                       # numericInput("msprocess", "Managing Submission Process", value = 0, min = 0, max = 100),
+                                       # numericInput("lit", "Literature Search", value = 0, min = 0, max = 100),
+                                       # numericInput("irb", "Institutional Review Board", value = 0, min = 0, max = 100),
+                                       # numericInput("dcp", "Data Collection and Preparation (DCP)", value = 0, min = 0, max = 100),
+                                       # numericInput("oad", "Other administrative duties", value = 0, min = 0, max = 100),
                                        circle = FALSE,
-                                       icon = icon("weight-hanging")
+                                       icon = icon("dumbbell") #icon("weight-hanging")
                                    )
                             ),
                             
                             column(width = 4, 
-                                   h4("3. Select Contributor"), 
+                                   h4("4. Select Contributor"), 
                                    pickerInput(
                                        inputId = "auth", 
                                        #label = "Select potential manuscript project contributors:", 
@@ -81,7 +81,7 @@ shinyUI(fluidPage(
                                            `selected-text-format` = "count > 2"), 
                                        multiple = TRUE
                                    ),
-                                   h4("4. Go to the Score tab")
+                                   h4("5. Go to the Score tab")
                             )),
                         
                         hr(),
@@ -99,12 +99,17 @@ shinyUI(fluidPage(
                         
                ),
                tabPanel("Score",
-                        sidebarLayout(
-                            sidebarPanel(actionButton("runButton","Add Score Value"),
-                                         br(),
-                                         textOutput("score_msg")),
-                            mainPanel(#dataTableOutput("tbscore")
-                                rHandsontableOutput("tbscore"))
+                        h6("Please enter the score for each individual for each sub
+                           section under Eligible and Responsible. \nNOTE: the points allocated to individuals should
+                           sum to the same points as the 'Points Possible'column. When done
+                           click on the 'Add Score Value' button."),
+                        actionButton("runButton","Add Score Value"),
+                        br(),
+                        textOutput("score_msg"),
+                        hr(),
+                        tabsetPanel(
+                            tabPanel("Eligible", rHandsontableOutput("tbscore")),
+                            tabPanel("Responsible", rHandsontableOutput("tbresp"))
                         )
                ),
                tabPanel("Rank",

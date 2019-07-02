@@ -43,14 +43,18 @@ shinyServer(function(input, output) {
     df1 <- reactive({
         #Scoring table
         Section <- c('Accreditation and EES', 'Data UI & Splashpage', 'HQ & Facilitator', 
-                     'Models', 'Qualitative Workgroup', 'Research tasks', 'Sim UI', 'Team Time Report', 
-                     'Development', 'Analysis', 'Manuscript', 'Managing Submission Process', 
-                     'Literature search', 'Institutional Review Board', 
-                     'Data Collection and Preparation (DCP)', 'Other administrative duties')
+                     'Models', 'Qualitative Workgroup', 'Research tasks', 'Sim UI', 
+                     'Team Time Report'#, 
+                     # 'Development', 'Analysis', 'Manuscript', 'Managing Submission Process', 
+                     # 'Literature search', 'Institutional Review Board', 
+                     # 'Data Collection and Preparation (DCP)', 
+                     # 'Other administrative duties'
+                     )
         usr_sect_wgt <- c(input$ees, input$dui, input$hq, input$model, input$qual,
-                          input$research, input$sui, input$ttr, 
-                          input$dev, input$Analysis, input$Manuscript, input$msprocess, 
-                          input$lit, input$irb, input$dcp, input$oad)
+                          input$research, input$sui, input$ttr#, 
+                          # input$dev, input$Analysis, input$Manuscript, input$msprocess, 
+                          # input$lit, input$irb, input$dcp, input$oad
+                          )
         
         dat1 <- data.frame(Section, usr_sect_wgt, stringsAsFactors = FALSE) %>%
             arrange(desc(usr_sect_wgt)) %>%
@@ -82,10 +86,32 @@ shinyServer(function(input, output) {
         return(dat2)
     })
     
+    df_res <- reactive({
+        res_lim <- df %>%
+            filter(Eligibility == 'Responsible') %>%
+            select(Category, Subcategory, `Points Possible`)
+        dat <- res_lim %>%
+            cbind.data.frame(data.frame(matrix(vector(), nrow(res_lim), 
+                                               length(input$auth),
+                                               dimnames = list(c(), input$auth)),
+                                        stringsAsFactors = FALSE)) %>%
+            mutate_at(4:(length(input$auth)+3), as.numeric)
+        
+        return(dat)
+    })
+    
     
     values <- reactiveValues()
     output$tbscore <- renderRHandsontable({
-        rhandsontable(data = df2() %>% select(-`Content Weight`),
+        rhandsontable(data = df2() %>% select(-`Content Weight`, -Eligibility),
+                      rowHeaders = NULL,
+                      contextMenu = FALSE,
+                      #width = 600,
+                      height = 700)
+    })
+    
+    output$tbresp <- renderRHandsontable({
+        rhandsontable(data = df_res(),
                       rowHeaders = NULL,
                       contextMenu = FALSE,
                       #width = 600,
@@ -93,23 +119,47 @@ shinyServer(function(input, output) {
     })
     
     observeEvent(input$runButton,{
-        values$data <- hot_to_r(input$tbscore) 
+        values$elig <- hot_to_r(input$tbscore)
+        values$resp <- hot_to_r(input$tbresp) 
     })
     df3 <- reactive({
         dat1 <- df1() %>%
             filter(Section != "Total") %>%
             rename(Category = Section) 
         
-        values$data %>%
+        dfp1 <- values$elig %>%
             select(-`Points Possible`) %>%
-            gather(Author, score,  -Eligibility, -Category, -Subcategory) %>%
-            left_join(dat1) %>%
+            gather(Author, score, -Category, -Subcategory) %>%
+            left_join(dat1, by = "Category") %>%
             mutate(Author = sub("\\.\\.", ", ", Author),
                    Author = sub("\\.", " ", Author),
-                   score = score * (`Content Weight`)/100) %>%
+                   score = score * (`Content Weight`/100)) %>%
             group_by(Author) %>%
-            summarise(`Total Score` = sum(score, na.rm = TRUE)) %>% 
+            summarise(Score = sum(score, na.rm = TRUE)) %>%
+            ungroup() %>%
+            mutate(Eligibility = 'Eligibile',
+                   eligible_wgt = input$elig)
+            
+        dfp2 <- values$resp %>%
+            select(-`Points Possible`) %>%
+            gather(Author, score, -Category, -Subcategory) %>%
+            mutate(Author = sub("\\.\\.", ", ", Author),
+                   Author = sub("\\.", " ", Author)) %>%
+            group_by(Author) %>%
+            summarise(Score = sum(score, na.rm = TRUE)) %>%
+            ungroup() %>%
+            mutate(Eligibility = 'Responsible',
+                   eligible_wgt = (100 - input$elig))
+        
+        dfp3 <- dfp1 %>%
+            bind_rows(dfp2) %>%
+            mutate(Score = Score * eligible_wgt/100) %>%
+            group_by(Author) %>%
+            summarise(`Total Score` = sum(Score, na.rm = TRUE)) %>% 
             arrange(desc(`Total Score`))
+        
+        return(dfp3)
+        
     })
     
     output$rank <- renderDataTable({
