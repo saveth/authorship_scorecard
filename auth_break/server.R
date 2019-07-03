@@ -14,14 +14,19 @@ library(shinyWidgets)
 library(DT)
 library(rhandsontable)
 
+
 load("../auth.Rdata")
 # Define Server for Authorship Scorecard application 
 shinyServer(function(input, output) {
 
     #Messages
-    output$usr_out <- eventReactive(input$submit1,{
-        print(paste0( "Thank you ",input$usr_in, ". Please go to the Manuscript tab."))
+    usname <- eventReactive(input$submit1,{
+        input$usr_in
     })
+    output$usr_out <- renderText({
+        paste0( "Thank you ","<font color=\"#0083BE\"><b>", usname(), "</b></font>", ". Please go to the Manuscript tab.")
+    })
+    
     
     output$score_msg <- eventReactive(input$runButton, {
         print("\nIf you are satisfied please go to the Rank tab. \nOtherwise, make changes and click on the 'Add Score Value' again. ")
@@ -65,7 +70,19 @@ shinyServer(function(input, output) {
     })
     
     output$wgt <- renderTable({
+        # df1() %>%
+        #     datatable %>%
+        #     formatStyle(0, target = "row", backgroundColor = 
+        #                     styleEqual(which(df1()$Section == 'Total'), "red"))
+        # df1() %>%
+        #     mutate(`Content Weight` = cell_spec(`Content Weight` , 'html', color = ifelse(
+        #         Section = "Total" && `Content Weight` < 100, "blue", ifelse(
+        #             Section = "Total" && `Content Weight` > 100, "red", 'black')
+        #     ))) %>%
+        #     kable(format = "html", escape = F) %>%
+        #     kable_styling("striped", full_width = F)
         df1()
+            
     })
     
     df2 <- reactive({
@@ -168,9 +185,12 @@ shinyServer(function(input, output) {
     
     #Create Excel output file
     output$dl <- downloadHandler(
-        filename = function(){paste0(input$usr_in, '_', input$paper, '.xlsx')},
+        filename = function(){paste0(input$usr_in, '_', input$paper, '_',
+                                     format(Sys.Date(), "%Y%m%d"), '.xlsx')},
         content = function(file){
-            write_xlsx(list(`Category Weight` = df1(), Score = values$data, Rank = df3()), path = file)
+            write_xlsx(list(`Category Weight` = df1(), `Eligible Score` = values$elig,
+                            `Responsible Score` = values$resp, Rank = df3()), 
+                       path = file)
         }
     )
 

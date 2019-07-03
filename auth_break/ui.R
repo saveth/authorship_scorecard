@@ -25,7 +25,7 @@ shinyUI(fluidPage(
                         h4("Please enter your name:"),
                         textInput("usr_in", ""),
                         actionButton("submit1", "Done"),
-                        textOutput("usr_out")
+                        htmlOutput("usr_out")
                ),
                tabPanel("Manuscript",
                         fluidRow(
@@ -89,7 +89,8 @@ shinyUI(fluidPage(
                             column(2),
                             column(6,
                                    h4("Identified Project Content Areas:"),
-                                   tableOutput("wgt")
+                                   tableOutput("wgt"),
+                                   span(h5("Total should add to 100."), style = "color:red")
                             ),
                             column(4,
                                    h4("Identified Project Potential Contributors:"),
@@ -114,8 +115,8 @@ shinyUI(fluidPage(
                ),
                tabPanel("Rank",
                         h6("This page shows the ranking based on the scores entered in 
-                      the 'Score' tab and the weight from the Contribution Category. 
-                      If you need to make changes, please go back to the 'Score' tab 
+                      the 'Score' tab and the weight from the Manuscript tab. 
+                      If you need to make changes, please go back to these tabs 
                          to make your edits, otherwise go to the 'Save' tab."),
                         br(),
                         dataTableOutput("rank")
