@@ -1,5 +1,5 @@
 ## title: "Authorship Scorecard"
-## author: "Savet Hong"
+## Code written by:"Savet Hong"
 ## date: "July 1, 2019"
 ## Purpose: Build Interactive Scorecard
 ##
@@ -185,8 +185,11 @@ shinyServer(function(input, output) {
     
     #Create Excel output file
     output$dl <- downloadHandler(
-        filename = function(){paste0(input$usr_in, '_', input$paper, '_',
-                                     format(Sys.Date(), "%Y%m%d"), '.xlsx')},
+        filename = function(){ifelse(input$paper == 'Other', 
+                                     paste0(input$usr_in, '_', input$np, '_',
+                                     format(Sys.Date(), "%Y%m%d"), '.xlsx'),
+                                     paste0(input$usr_in, '_', input$paper, '_',
+                                            format(Sys.Date(), "%Y%m%d"), '.xlsx'))},
         content = function(file){
             write_xlsx(list(`Category Weight` = df1(), `Eligible Score` = values$elig,
                             `Responsible Score` = values$resp, Rank = df3()), 
