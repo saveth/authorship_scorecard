@@ -1,5 +1,5 @@
 ## title: "Authorship Scorecard"
-## author: "Savet Hong"
+## Code written by: "Savet Hong"
 ## date: "July 1, 2019"
 ## Purpose: Build Interactive Scorecard
 ##
@@ -18,8 +18,7 @@ load("auth.Rdata")
 ui <- fluidPage(
   navbarPage("Authorship Scorecard",
              tabPanel("Editor",
-                      fluidRow(width = 12, offset = 1,
-                               "Created by: Savet Hong for TeamPSD"),
+                      HTML('<p><img src="team_psd_logo_sm.png", height = "200", width = "600"/></p>'),
                       hr(),
                       h4("Please enter your name:"),
                       textInput("usr_in", ""),
