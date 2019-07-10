@@ -96,7 +96,6 @@ shinyServer(function(input, output) {
     df_elig_changes <- reactive({
         if(is.null(input$tbscore)){return(df2())}
         else if(!identical(df2(),input$tbscore)){
-            # hot.to.df function will convert your updated table into the dataframe
             mytable <- as.data.frame(hot_to_r(input$tbscore))
             mytable <- mytable[1:nrow(df2()),]
             
@@ -105,12 +104,21 @@ shinyServer(function(input, output) {
         }
     })
     
+    color_renderer <- "
+  function(instance, td) {
+    Handsontable.renderers.TextRenderer.apply(this, arguments);
+    td.style.color = 'red';
+  }
+"
+    
     output$tbscore <- renderRHandsontable({
         rhandsontable(data = df_elig_changes(),
                       rowHeaders = NULL,
-                      contextMenu = FALSE,
-                      #width = 600,
-                      height = 700)
+                      #contextMenu = FALSE,
+                      height = 700) %>%
+            hot_table(highlightCol = TRUE, highlightRow = TRUE) %>%
+            hot_rows(fixedRowsTop = 1) %>%
+            hot_col("Points Possible", renderer = color_renderer)
     })
     
 
@@ -133,7 +141,6 @@ shinyServer(function(input, output) {
     df_res_changes <- reactive({
         if(is.null(input$tbresp)){return(df_res())}
         else if(!identical(df_res(),input$tbresp)){
-            # hot.to.df function will convert your updated table into the dataframe
             mytable <- as.data.frame(hot_to_r(input$tbresp))
             mytable <- mytable[1:nrow(df_res()),]
             
@@ -145,9 +152,12 @@ shinyServer(function(input, output) {
     output$tbresp <- renderRHandsontable({
         rhandsontable(data = df_res_changes(),
                       rowHeaders = NULL,
-                      contextMenu = FALSE,
+                      #contextMenu = FALSE,
                       #width = 600,
-                      height = 700)
+                      height = 700) %>%
+            hot_table(highlightCol = TRUE, highlightRow = TRUE) %>%
+            hot_rows(fixedRowsTop = 1) %>%
+            hot_col("Points Possible", renderer = color_renderer)
     })
     
     #EXTRACT REACTIVE ELIGIBILITY/RESPONSIBLE TABLES
@@ -163,7 +173,7 @@ shinyServer(function(input, output) {
             rename(Category = Section) 
         
         dfp1 <- values$elig %>%
-            select(-`Points Possible`) %>%
+            select(-`Points Possible`, -Total) %>%
             gather(Author, score, -Category, -Subcategory) %>%
             left_join(dat1, by = "Category") %>%
             mutate(Author = sub("\\.\\.", ", ", Author),
@@ -176,7 +186,7 @@ shinyServer(function(input, output) {
                    eligible_wgt = input$elig)
             
         dfp2 <- values$resp %>%
-            select(-`Points Possible`) %>%
+            select(-`Points Possible`, -Total) %>%
             gather(Author, score, -Category, -Subcategory) %>%
             mutate(Author = sub("\\.\\.", ", ", Author),
                    Author = sub("\\.", " ", Author)) %>%
