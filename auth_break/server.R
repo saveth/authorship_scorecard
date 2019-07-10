@@ -70,21 +70,10 @@ shinyServer(function(input, output) {
     })
     
     output$wgt <- renderTable({
-        # df1() %>%
-        #     datatable %>%
-        #     formatStyle(0, target = "row", backgroundColor = 
-        #                     styleEqual(which(df1()$Section == 'Total'), "red"))
-        # df1() %>%
-        #     mutate(`Content Weight` = cell_spec(`Content Weight` , 'html', color = ifelse(
-        #         Section = "Total" && `Content Weight` < 100, "blue", ifelse(
-        #             Section = "Total" && `Content Weight` > 100, "red", 'black')
-        #     ))) %>%
-        #     kable(format = "html", escape = F) %>%
-        #     kable_styling("striped", full_width = F)
         df1()
-            
     })
     
+    #BUILD REACTIVE ELIGIBILITY TABLE
     df2 <- reactive({
         dat1 <- df1() %>%
             filter(Section != "Total") %>%
@@ -95,14 +84,37 @@ shinyServer(function(input, output) {
                                                dimnames = list(c(), input$auth)),
                                         stringsAsFactors = FALSE)) %>%
             mutate_at(3:(length(input$auth)+2), as.numeric) %>%
+            mutate(Total = rowSums(.[,3:(length(input$auth)+2)], na.rm = TRUE)) %>%
             inner_join(df[,1:4], by = "Category") %>%
             select(names(df)[1:4], everything()) %>%
-            filter(`Content Weight` != 0)
-        
-        
+            filter(`Content Weight` != 0) %>% 
+            select(-`Content Weight`, -Eligibility)
+            
         return(dat2)
     })
     
+    df_elig_changes <- reactive({
+        if(is.null(input$tbscore)){return(df2())}
+        else if(!identical(df2(),input$tbscore)){
+            # hot.to.df function will convert your updated table into the dataframe
+            mytable <- as.data.frame(hot_to_r(input$tbscore))
+            mytable <- mytable[1:nrow(df2()),]
+            
+            mytable[,(length(input$auth)+4)] <- rowSums(mytable[,4:(length(input$auth)+3)], na.rm = TRUE) 
+            mytable
+        }
+    })
+    
+    output$tbscore <- renderRHandsontable({
+        rhandsontable(data = df_elig_changes(),
+                      rowHeaders = NULL,
+                      contextMenu = FALSE,
+                      #width = 600,
+                      height = 700)
+    })
+    
+
+    #BUILD REACTIVE RESPONSIBLE TABLE
     df_res <- reactive({
         res_lim <- df %>%
             filter(Eligibility == 'Responsible') %>%
@@ -112,28 +124,34 @@ shinyServer(function(input, output) {
                                                length(input$auth),
                                                dimnames = list(c(), input$auth)),
                                         stringsAsFactors = FALSE)) %>%
-            mutate_at(4:(length(input$auth)+3), as.numeric)
+            mutate_at(4:(length(input$auth)+3), as.numeric) %>%
+            mutate(Total = rowSums(.[,4:(length(input$auth)+3)]))
         
         return(dat)
     })
     
-    
-    values <- reactiveValues()
-    output$tbscore <- renderRHandsontable({
-        rhandsontable(data = df2() %>% select(-`Content Weight`, -Eligibility),
-                      rowHeaders = NULL,
-                      contextMenu = FALSE,
-                      #width = 600,
-                      height = 700)
+    df_res_changes <- reactive({
+        if(is.null(input$tbresp)){return(df_res())}
+        else if(!identical(df_res(),input$tbresp)){
+            # hot.to.df function will convert your updated table into the dataframe
+            mytable <- as.data.frame(hot_to_r(input$tbresp))
+            mytable <- mytable[1:nrow(df_res()),]
+            
+            mytable[,(length(input$auth)+4)] <- rowSums(mytable[,4:(length(input$auth)+3)], na.rm = TRUE) 
+            mytable
+        }
     })
     
     output$tbresp <- renderRHandsontable({
-        rhandsontable(data = df_res(),
+        rhandsontable(data = df_res_changes(),
                       rowHeaders = NULL,
                       contextMenu = FALSE,
                       #width = 600,
                       height = 700)
     })
+    
+    #EXTRACT REACTIVE ELIGIBILITY/RESPONSIBLE TABLES
+    values <- reactiveValues()
     
     observeEvent(input$runButton,{
         values$elig <- hot_to_r(input$tbscore)
