@@ -94,6 +94,7 @@ shinyServer(function(input, output) {
     })
     
     df_elig_changes <- reactive({
+      # function to compare user input to default and sum input entered into "Total" column
         if(is.null(input$tbscore)){return(df2())}
         else if(!identical(df2(),input$tbscore)){
             mytable <- as.data.frame(hot_to_r(input$tbscore))
@@ -109,7 +110,7 @@ shinyServer(function(input, output) {
     Handsontable.renderers.TextRenderer.apply(this, arguments);
     td.style.color = 'red';
   }
-"
+" #Java script entered as text to be passed through render
     
     output$tbscore <- renderRHandsontable({
         rhandsontable(data = df_elig_changes(),
@@ -117,8 +118,8 @@ shinyServer(function(input, output) {
                       #contextMenu = FALSE,
                       height = 700) %>%
             hot_table(highlightCol = TRUE, highlightRow = TRUE) %>%
-            hot_rows(fixedRowsTop = 1) %>%
-            hot_col("Points Possible", renderer = color_renderer)
+            hot_rows(fixedRowsTop = 1) %>% # fix header
+            hot_col("Points Possible", renderer = color_renderer) # add color
     })
     
 
@@ -156,8 +157,8 @@ shinyServer(function(input, output) {
                       #width = 600,
                       height = 700) %>%
             hot_table(highlightCol = TRUE, highlightRow = TRUE) %>%
-            hot_rows(fixedRowsTop = 1) %>%
-            hot_col("Points Possible", renderer = color_renderer)
+            hot_rows(fixedRowsTop = 1) %>% # fix header
+            hot_col("Points Possible", renderer = color_renderer) # add color
     })
     
     #EXTRACT REACTIVE ELIGIBILITY/RESPONSIBLE TABLES
@@ -167,6 +168,8 @@ shinyServer(function(input, output) {
         values$elig <- hot_to_r(input$tbscore)
         values$resp <- hot_to_r(input$tbresp) 
     })
+    
+    # CREATE RANK TABLE
     df3 <- reactive({
         dat1 <- df1() %>%
             filter(Section != "Total") %>%
@@ -175,15 +178,16 @@ shinyServer(function(input, output) {
         dfp1 <- values$elig %>%
             select(-`Points Possible`, -Total) %>%
             gather(Author, score, -Category, -Subcategory) %>%
-            left_join(dat1, by = "Category") %>%
+            left_join(dat1, by = "Category") %>% # Add users weight for eligible category
             mutate(Author = sub("\\.\\.", ", ", Author),
                    Author = sub("\\.", " ", Author),
                    score = score * (`Content Weight`/100)) %>%
             group_by(Author) %>%
             summarise(Score = sum(score, na.rm = TRUE)) %>%
             ungroup() %>%
-            mutate(Eligibility = 'Eligibile',
-                   eligible_wgt = input$elig)
+            mutate(Eligibility = 'Eligibile')
+                   #eligible_wgt = input$elig) 
+                   # Remove weight for eligibility relative to responsibility
             
         dfp2 <- values$resp %>%
             select(-`Points Possible`, -Total) %>%
@@ -191,14 +195,16 @@ shinyServer(function(input, output) {
             mutate(Author = sub("\\.\\.", ", ", Author),
                    Author = sub("\\.", " ", Author)) %>%
             group_by(Author) %>%
-            summarise(Score = sum(score, na.rm = TRUE)) %>%
+            summarise(Score = sum(score, na.rm = TRUE)) %>% # Calculate responsible score
             ungroup() %>%
-            mutate(Eligibility = 'Responsible',
-                   eligible_wgt = (100 - input$elig))
+            mutate(Eligibility = 'Responsible')
+                  # eligible_wgt = (100 - input$elig))
+                  # Remove weight for eligibility relative to responsibility
         
         dfp3 <- dfp1 %>%
             bind_rows(dfp2) %>%
-            mutate(Score = Score * eligible_wgt/100) %>%
+            #mutate(Score = Score * eligible_wgt/100) %>% # add weights for eligible component
+              # Remove weight for eligibility relative to responsibility
             group_by(Author) %>%
             summarise(`Total Score` = sum(Score, na.rm = TRUE)) %>% 
             arrange(desc(`Total Score`))

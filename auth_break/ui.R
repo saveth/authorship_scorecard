@@ -43,9 +43,9 @@ shinyUI(fluidPage(
                                    
                             ),
                             column(width = 4,
-                                   h4("2. Select Overall Eligible Weight Relative to Responsible"),
-                                   sliderInput("elig", "Overall Eligible Weight", value = 50, min = 0, max = 100),
-                                   h4("3. Enter Weights for Each Eligible Contribution Category"),
+                                   #h4("2. Select Overall Eligible Weight Relative to Responsible"),
+                                   #sliderInput("elig", "Overall Eligible Weight", value = 50, min = 0, max = 100),
+                                   h4("2. Enter Weights for Each Authorship Eligible Contribution"),
                                    dropdownButton(
                                        helpText("Weights are percentage (%) and must total to 100%."),
                                        
@@ -72,7 +72,7 @@ shinyUI(fluidPage(
                             ),
                             
                             column(width = 4, 
-                                   h4("4. Select Contributor"), 
+                                   h4("3. Select Contributor"), 
                                    pickerInput(
                                        inputId = "auth", 
                                        #label = "Select potential manuscript project contributors:", 
@@ -83,7 +83,7 @@ shinyUI(fluidPage(
                                            `selected-text-format` = "count > 2"), 
                                        multiple = TRUE
                                    ),
-                                   h4("5. Go to the Score tab")
+                                   h4("4. Go to the Score tab")
                             )),
                         
                         hr(),
